@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Memory Game</title>
+    <link rel="icon" href="data:image/svg+xml,
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+        <text y='0.9em' font-size='90'>🧠</text>
+    </svg>">
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #1a1a1a, #333);
+            color: white;
+            font-family: Arial;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game {
+            display: grid;
+            grid-template-columns: repeat(6, 100px);
+            grid-gap: 15px;
+        }
+
+        .card {
+            width: 100px;
+            height: 100px;
+            background: #444;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 45px;
+            cursor: pointer;
+            border-radius: 12px;
+            user-select: none;
+            transition: 0.2s;
+            box-shadow: 0 0 10px #000;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .flipped {
+            background: white;
+            color: black;
+            box-shadow: 0 0 15px white;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game"></div>
+
+<script>
+    const ALL_EMOJIS = [
+        "🔥","⭐","⚡","💀","🎯","🎲","🎵","🍀","🍕","⚽",
+        "🏀","🏈","⚾","🎮","🚀","🌙","☀️","❄️","🌈","👑",
+        "🐍","🐉","🦅","🦈","🦊","🐺","🐢","🐠","🍎","🍉",
+        "🎁","🎈","💎","🧩","🪐","🌟","🍩","🍔","🐸","🐵"
+    ];
+
+    const game = document.getElementById("game");
+    let flipped = [];
+    let lock = false;
+    let matched = 0;
+
+    function startGame() {
+        game.innerHTML = "";
+        flipped = [];
+        matched = 0;
+
+        // Pick 15 random emojis
+        let pool = [...ALL_EMOJIS];
+        let chosen = [];
+
+        for (let i = 0; i < 15; i++) {
+            let pick = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+            chosen.push(pick, pick); // add pair
+        }
+
+        // Shuffle
+        chosen.sort(() => Math.random() - 0.5);
+
+        // Create cards
+        chosen.forEach(symbol => {
+            const card = document.createElement("div");
+            card.classList.add("card");
+            card.dataset.symbol = symbol;
+            card.innerText = symbol; // show at start
+
+            game.appendChild(card);
+
+            card.addEventListener("click", () => {
+                if (lock || card.classList.contains("flipped")) return;
+
+                card.classList.add("flipped");
+                card.innerText = symbol;
+                flipped.push(card);
+
+                if (flipped.length === 2) {
+                    lock = true;
+
+                    setTimeout(() => {
+                        if (flipped[0].dataset.symbol === flipped[1].dataset.symbol) {
+                            matched += 2;
+                        } else {
+                            flipped.forEach(c => {
+                                c.classList.remove("flipped");
+                                c.innerText = "";
+                            });
+                        }
+
+                        flipped = [];
+                        lock = false;
+
+                        if (matched === 30) {
+                            setTimeout(startGame, 1000);
+                        }
+                    }, 700);
+                }
+            });
+        });
+
+        // Reveal all for 7 seconds
+        setTimeout(() => {
+            document.querySelectorAll(".card").forEach(card => {
+                card.classList.remove("flipped");
+                card.innerText = "";
+            });
+        }, 7000);
+    }
+
+    startGame();
+</script>
+
+</body>
+</html>
+

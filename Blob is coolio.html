@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blob Evolution Lab</title>
+
+  <!-- Science Icon (🧪 NO GLOBE) -->
+  <link rel="icon" href="data:image/svg+xml,
+  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'>
+    <text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='50'>🧪</text>
+  </svg>">
+
+  <style>
+    body {
+      background: #050509;
+      color: #f5f5f5;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin-top: 30px;
+      font-size: 40px;
+      letter-spacing: 2px;
+    }
+
+    #lab {
+      margin: 30px auto;
+      max-width: 600px;
+      padding: 20px;
+      border-radius: 16px;
+      background: radial-gradient(circle at top, #26264a, #090912);
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+    }
+
+    #blobContainer {
+      margin: 20px auto;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #7cffc4, #00b894);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    #blobFace {
+      font-size: 60px;
+      user-select: none;
+    }
+
+    #mutationText {
+      margin-top: 15px;
+      min-height: 40px;
+      font-size: 18px;
+      color: #c7f5ff;
+    }
+
+    #rarityTag {
+      margin-top: 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .common { color: #b0bec5; }
+    .uncommon { color: #8bc34a; }
+    .rare { color: #4fc3f7; }
+    .legendary { color: #ffd54f; }
+    .glitched { color: #ff80ab; text-shadow: 0 0 5px #ff4081; }
+    .corrupted { color: #ff5252; text-shadow: 0 0 6px #ff1744; }
+
+    #stats {
+      margin-top: 15px;
+      font-size: 16px;
+      color: #aaa;
+    }
+
+    .btn-row {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 18px;
+      font-size: 16px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: #00cec9;
+      color: #021012;
+      font-weight: bold;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+      background: #00e6df;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.97);
+      box-shadow: none;
+    }
+
+    #log {
+      margin: 25px auto 10px;
+      max-width: 600px;
+      font-size: 13px;
+      color: #888;
+      text-align: left;
+      padding: 10px 15px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    #logTitle {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Blob Evolution Lab 🧪</h1>
+
+  <div id="lab">
+    <div id="blobContainer">
+      <div id="blobFace">•ᴗ•</div>
+    </div>
+
+    <div id="mutationText">Your blob is calm and slightly confused.</div>
+    <div id="rarityTag" class="common">COMMON FORM</div>
+
+    <div id="stats">
+      Evolutions: <span id="evoCount">0</span> ·
+      Mood: <span id="moodText">Neutral</span>
+    </div>
+
+    <div class="btn-row">
+      <button id="feedBtn">Feed</button>
+      <button id="shockBtn">Shock</button>
+      <button id="exposeBtn">Expose</button>
+      <button id="resetBtn">New Blob</button>
+    </div>
+  </div>
+
+  <div id="log">
+    <div id="logTitle">Mutation Log</div>
+    <div id="logEntries"></div>
+  </div>
+
+  <script>
+    const blobContainer = document.getElementById("blobContainer");
+    const blobFace = document.getElementById("blobFace");
+    const mutationText = document.getElementById("mutationText");
+    const rarityTag = document.getElementById("rarityTag");
+    const evoCountEl = document.getElementById("evoCount");
+    const moodText = document.getElementById("moodText");
+    const logEntries = document.getElementById("logEntries");
+
+    const feedBtn = document.getElementById("feedBtn");
+    const shockBtn = document.getElementById("shockBtn");
+    const exposeBtn = document.getElementById("exposeBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let evoCount = 0;
+    let mood = "Neutral";
+
+    // RARITY SYSTEM WITH CORRUPTED + 7 GLITCHED
+    function getRarity() {
+      const roll = Math.random();
+
+      if (roll < 0.01) return "corrupted";     // 1%
+      if (roll < 0.06) return "glitched";      // next 5%
+      if (roll < 0.16) return "legendary";     // next 10%
+      if (roll < 0.31) return "rare";          // next 15%
+      if (roll < 0.51) return "uncommon";      // next 20%
+      return "common";                         // 49%
+    }
+
+    const mutations = {
+      common: [
+        { text: "The blob wiggles happily.", face: "•ᴗ•", color: "radial-gradient(circle at 30% 30%, #a5ffb8, #00b894)" },
+        { text: "The blob turns a soft pink.", face: "•ᵕ•", color: "radial-gradient(circle at 30% 30%, #ffb6e6, #ff6fb1)" },
+        { text: "The blob jiggles gently.", face: "•‿•", color: "radial-gradient(circle at 30% 30%, #bbdefb, #1e88e5)" }
+      ],
+      uncommon: [
+        { text: "The blob grows tiny legs!", face: "•ᴖ•", color: "radial-gradient(circle at 30% 30%, #ffeaa7, #fdcb6e)" },
+        { text: "The blob glows faintly.", face: "•◡•", color: "radial-gradient(circle at 30% 30%, #c0fffb, #00cec9)" }
+      ],
+      rare: [
+        { text: "The blob becomes bioluminescent!", face: "•✧•", color: "radial-gradient(circle at 30% 30%, #b2ff59, #33691e)" },
+        { text: "The blob floats slightly above the ground.", face: "•ᴗ•✧", color: "radial-gradient(circle at 30% 30%, #b3e5fc, #1976d2)" }
+      ],
+      legendary: [
+        { text: "LEGENDARY FEAST: The blob becomes an angelic entity with a halo glow.", face: "°ᴗ°✧", color: "radial-gradient(circle at 30% 30%, #fff9c4, #fbc02d)" },
+        { text: "VOID BLOOM: The blob becomes a tiny void star.", face: "•●•", color: "radial-gradient(circle at 30% 30%, #000000, #263238)" }
+      ],
+      glitched: [
+        { text: "GLITCH ERROR: The blob distorts reality.", face: "¤_¤", color: "radial-gradient(circle at 30% 30%, #ff80ab, #880e4f)" },
+        { text: "CORRUPTION: The blob breaks into static.", face: "#_#", color: "radial-gradient(circle at 30% 30%, #f48fb1, #ad1457)" },
+        { text: "REALITY BREAK: The blob phases incorrectly.", face: "⧉_⧉", color: "radial-gradient(circle at 30% 30%, #ce93d8, #6a1b9a)" },
+        { text: "DATABENT: The blob looks like a broken image file.", face: "▒_▒", color: "radial-gradient(circle at 30% 30%, #b39ddb, #4527a0)" },
+        { text: "NULL REFERENCE: The blob fails to render properly.", face: "null", color: "radial-gradient(circle at 30% 30%, #eeeeee, #9e9e9e)" },
+        { text: "OVERLOAD: Symbols flash across the blob's surface.", face: "⚠_⚠", color: "radial-gradient(circle at 30% 30%, #ffcc80, #e65100)" },
+        { text: "REDACTED: The blob is censored by black bars.", face: "██_██", color: "radial-gradient(circle at 30% 30%, #212121, #000000)" }
+      ],
+      corrupted: [
+        { text: "CORRUPTED VOIDLING: The blob absorbs all nearby color.", face: "⨂_⨂", color: "radial-gradient(circle at 30% 30%, #212121, #4a148c)" },
+        { text: "MEMORY LEAK: The blob forgets parts of its own shape.", face: "?_?", color: "radial-gradient(circle at 30% 30%, #ffab91, #bf360c)" },
+        { text: "FATAL ERROR: The blob becomes a living crash screen.", face: "ERR", color: "radial-gradient(circle at 30% 30%, #ff8a80, #b71c1c)" },
+        { text: "CORRUPTED ANGEL: The halo twists into something sinister.", face: "°x°", color: "radial-gradient(circle at 30% 30%, #fce4ec, #880e4f)" },
+        { text: "OVERWRITTEN: Another presence tries to replace the blob.", face: "██", color: "radial-gradient(circle at 30% 30%, #424242, #000000)" }
+      ]
+    };
+
+    function addLogEntry(text, rarity) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      div.className = rarity;
+      logEntries.prepend(div);
+    }
+
+    function mutate() {
+      evoCount++;
+      evoCountEl.textContent = evoCount;
+
+      const rarity = getRarity();
+      const list = mutations[rarity];
+      const chosen = list[Math.floor(Math.random() * list.length)];
+
+      blobContainer.style.background = chosen.color;
+      blobFace.textContent = chosen.face;
+      mutationText.textContent = chosen.text;
+
+      rarityTag.textContent = rarity.toUpperCase() + " FORM";
+      rarityTag.className = rarity;
+
+      if (rarity === "common") mood = "Calm";
+      else if (rarity === "uncommon") mood = "Curious";
+      else if (rarity === "rare") mood = "Excited";
+      else if (rarity === "legendary") mood = "Transcendent";
+      else if (rarity === "glitched") mood = "???";
+      else if (rarity === "corrupted") mood = "Corrupted";
+
+      moodText.textContent = mood;
+
+      blobContainer.style.transform = "scale(1.05)";
+      setTimeout(() => blobContainer.style.transform = "scale(1)", 120);
+
+      addLogEntry(chosen.text, rarity);
+    }
+
+    function resetBlob() {
+      evoCount = 0;
+      mood = "Neutral";
+      evoCountEl.textContent = evoCount;
+      moodText.textContent = mood;
+      blobContainer.style.background = "radial-gradient(circle at 30% 30%, #7cffc4, #00b894)";
+      blobFace.textContent = "•ᴗ•";
+      mutationText.textContent = "A new blob has entered the lab. It looks curious.";
+      rarityTag.textContent = "COMMON FORM";
+      rarityTag.className = "common";
+      logEntries.innerHTML = "";
+    }
+
+    feedBtn.onclick = mutate;
+    shockBtn.onclick = mutate;
+    exposeBtn.onclick = mutate;
+    resetBtn.onclick = resetBlob;
+
+    resetBlob();
+  </script>
+
+</body>
+</html>
