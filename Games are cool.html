@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Speed Typing Showdown 🚨</title>
+
+  <!-- 🚨 SIREN TAB ICON -->
+  <link rel="icon" href="data:image/svg+xml,
+  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'>
+  <text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='50'>🚨</text>
+  </svg>">
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      background: linear-gradient(135deg, #ff66cc, #7a5cff, #1e7fff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 18px;
+      padding: 24px 28px;
+      width: min(650px, 90vw);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+    }
+
+    .mode-buttons button {
+      margin: 4px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    .mode-buttons button:disabled,
+    #startBtn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #word {
+      margin-top: 20px;
+      font-size: 32px;
+      font-weight: bold;
+      min-height: 40px;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    #score {
+      margin-top: 14px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #input {
+      margin-top: 20px;
+      width: 80%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 18px;
+      outline: none;
+      text-align: center;
+    }
+
+    #startBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      background: linear-gradient(135deg, #ff66cc, #ffb347);
+      color: #1b0033;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Speed Typing Showdown 🚨</h1>
+
+    <div class="mode-buttons">
+      <button id="easyBtn" onclick="setMode('easy')">Easy</button>
+      <button id="mediumBtn" onclick="setMode('medium')">Medium</button>
+      <button id="challengeBtn" onclick="setMode('challenge')">Challenge</button>
+      <button id="championBtn" onclick="setMode('champion')">CHAMPION</button>
+    </div>
+
+    <div id="word"></div>
+    <div id="status">Press Start to begin</div>
+    <div id="score">You 0 — 0 AI</div>
+
+    <input id="input" disabled oninput="checkPlayerInput()">
+
+    <button id="startBtn" onclick="startRound(true)">Start Round</button>
+  </div>
+
+  <script>
+    // Difficulty mode ranges
+    const modes = {
+      easy: [5, 10],
+      medium: [4, 8],
+      challenge: [5, 6],
+      champion: [3, 6]
+    };
+
+    let chosenMode = "easy";
+    let playerScore = 0;
+    let aiScore = 0;
+    let currentWord = "";
+    let typingEnabled = false;
+
+    const words = [
+      "galaxy", "kitchen", "chaos", "velocity", "banana",
+      "phantom", "spark", "matrix", "orbit", "fusion",
+      "neon", "shadow", "pixel", "turbo", "cosmic"
+    ];
+
+    function lockUI(lock) {
+      document.getElementById("easyBtn").disabled = lock;
+      document.getElementById("mediumBtn").disabled = lock;
+      document.getElementById("challengeBtn").disabled = lock;
+      document.getElementById("championBtn").disabled = lock;
+      document.getElementById("startBtn").disabled = lock;
+    }
+
+    function setMode(mode) {
+      chosenMode = mode;
+      document.getElementById("status").textContent = "Mode set to " + mode.toUpperCase();
+    }
+
+    function startRound(resetScore) {
+      if (resetScore) {
+        playerScore = 0;
+        aiScore = 0;
+        updateScore();
+      }
+
+      lockUI(true);
+
+      typingEnabled = false;
+      document.getElementById("input").value = "";
+      document.getElementById("input").disabled = true;
+      document.getElementById("word").textContent = "";
+
+      // COUNTDOWN FROM 6 → 1
+      let countdown = 6;
+      document.getElementById("status").textContent = "AI choosing word… " + countdown;
+
+      let countdownInterval = setInterval(() => {
+        countdown--;
+        document.getElementById("status").textContent = "AI choosing word… " + countdown;
+
+        if (countdown === 0) {
+          clearInterval(countdownInterval);
+
+          // AI PICKS WORD
+          currentWord = words[Math.floor(Math.random() * words.length)];
+          document.getElementById("word").textContent = currentWord;
+
+          typingEnabled = true;
+          document.getElementById("input").disabled = false;
+          document.getElementById("input").focus();
+          document.getElementById("status").textContent = "TYPE THE WORD!";
+
+          startAI();
+        }
+      }, 1000);
+    }
+
+    function startAI() {
+      const [min, max] = modes[chosenMode];
+      const aiTime = Math.random() * (max - min) + min;
+
+      setTimeout(() => {
+        if (typingEnabled) {
+          aiScore++;
+          endRound("AI");
+        }
+      }, aiTime * 1000);
+    }
+
+    function checkPlayerInput() {
+      if (!typingEnabled) return;
+
+      const val = document.getElementById("input").value.trim();
+      if (val === currentWord) {
+        playerScore++;
+        endRound("Player");
+      }
+    }
+
+    function endRound(winner) {
+      typingEnabled = false;
+      document.getElementById("input").disabled = true;
+
+      document.getElementById("status").textContent =
+        winner === "Player" ? "You win the round!" : "AI wins the round!";
+
+      updateScore();
+
+      if (playerScore === 7 || aiScore === 7) {
+        endGame();
+      } else {
+        setTimeout(() => startRound(false), 2000);
+      }
+    }
+
+    function updateScore() {
+      document.getElementById("score").textContent =
+        `You ${playerScore} — ${aiScore} AI`;
+    }
+
+    function endGame() {
+      lockUI(false);
+
+      if (playerScore === 7) {
+        document.getElementById("status").textContent = "YOU WIN THE GAME 🔥🔥🔥";
+      } else {
+        document.getElementById("status").textContent = "AI WINS 😭😭😭";
+      }
+    }
+  </script>
+</body>
+</html>
